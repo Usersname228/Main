@@ -9,25 +9,51 @@ import sqlite3
 import os
 import random
 
-from config import Config
+# ============================================
+# КОНФИГУРАЦИЯ БОТА (все данные из .env и config.py)
+# ============================================
+
+# Основные настройки (замените на свои данные)
+BOT_TOKEN = "8045925681:AAGsbJnHkjyQ23X_4OlctxobxLcb-RZb7aM"
+ADMIN_CHAT_ID = 7669840193
+DATABASE_NAME = "database.db"
+
+# Настройки защиты от спама
+MAX_MESSAGES = 5  # Максимальное количество сообщений за период
+TIME_WINDOW = 300  # Период времени в секундах (5 минут)
+BLOCK_DURATION = 600  # Длительность блокировки в секундах (10 минут)
+
+# Функция проверки конфигурации
+def validate_config():
+    """Проверка конфигурации"""
+    if not BOT_TOKEN or BOT_TOKEN == "YOUR_BOT_TOKEN_HERE":
+        raise ValueError("BOT_TOKEN не установлен!")
+    if not ADMIN_CHAT_ID:
+        raise ValueError("ADMIN_CHAT_ID не установлен!")
+
+# Функция вывода информации о конфигурации
+def print_config_info():
+    """Вывод информации о конфигурации"""
+    return {
+        'BOT_TOKEN_SET': bool(BOT_TOKEN and BOT_TOKEN != "YOUR_BOT_TOKEN_HERE"),
+        'ADMIN_CHAT_ID_SET': bool(ADMIN_CHAT_ID),
+        'DATABASE_NAME': DATABASE_NAME,
+        'MAX_MESSAGES': MAX_MESSAGES,
+        'TIME_WINDOW': TIME_WINDOW,
+        'BLOCK_DURATION': BLOCK_DURATION
+    }
 
 # Проверяем конфигурацию перед запуском
-Config.validate()
+validate_config()
 
-# Настройка логирования
+# ============================================
+# НАСТРОЙКА ЛОГИРОВАНИЯ
+# ============================================
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
 logger = logging.getLogger(__name__)
-
-# Конфигурация из защищенного config.py
-BOT_TOKEN = Config.BOT_TOKEN
-ADMIN_CHAT_ID = Config.ADMIN_CHAT_ID
-DATABASE_NAME = Config.DATABASE_NAME
-MAX_MESSAGES = Config.MAX_MESSAGES
-TIME_WINDOW = Config.TIME_WINDOW
-BLOCK_DURATION = Config.BLOCK_DURATION
 
 # Создаем экземпляр бота
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -128,6 +154,9 @@ TOP_RUSSIAN_STOCKS = [
     'MGNT', 'POLY', 'AFKS', 'PHOR', 'SNGS', 'SNGSP', 'MTSS', 'RUAL', 'MOEX', 'YNDX'
 ]
 
+# ============================================
+# КЛАСС БАЗЫ ДАННЫХ
+# ============================================
 class Database:
     def __init__(self, db_name):
         self.db_name = db_name
@@ -213,6 +242,10 @@ class Database:
 # Инициализация базы данных
 db = Database(DATABASE_NAME)
 
+# ============================================
+# ФУНКЦИИ УТИЛИТЫ
+# ============================================
+
 def create_main_keyboard():
     keyboard = ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
     button1 = KeyboardButton('🏆 Топ валют')
@@ -220,7 +253,7 @@ def create_main_keyboard():
     button3 = KeyboardButton('📊 Аналитика РФ')
     button4 = KeyboardButton('🔍 Поиск валюты')
     button5 = KeyboardButton('🔎 Поиск крипты')
-    button6 = KeyboardButton('📈 Поиск акций')  # Новая кнопка
+    button6 = KeyboardButton('📈 Поиск акций')
     button7 = KeyboardButton('📨 Связь с админом')
     button8 = KeyboardButton('ℹ️ О боте')
     keyboard.add(button1, button2, button3, button4, button5, button6, button7, button8)
@@ -781,31 +814,6 @@ def get_popular_crypto_list():
         popular_list += f"{i}. {crypto_info['emoji']} {crypto_info['name']} ({crypto_info['symbol']})\n"
     return popular_list
 
-def get_all_currencies_list():
-    """
-    Возвращает список всех доступных валют с кодами и названиями
-    """
-    try:
-        cbr_url = 'https://www.cbr-xml-daily.ru/daily_json.js'
-        response = requests.get(cbr_url, timeout=10)
-        data = response.json()
-        
-        currencies_list = []
-        for code, valute in data['Valute'].items():
-            currencies_list.append({
-                'code': code,
-                'name': valute['Name'],
-                'value': valute['Value']
-            })
-        
-        # Сортируем по коду
-        currencies_list.sort(key=lambda x: x['code'])
-        return currencies_list
-        
-    except Exception as e:
-        logger.error(f"Ошибка при получении списка валют: {e}")
-        return []
-
 def forward_to_admin(message: Message, content_type="сообщение"):
     try:
         user = message.from_user
@@ -843,7 +851,10 @@ def check_message_limit(user_id):
     
     return True, ""
 
+# ============================================
 # ОСНОВНЫЕ КОМАНДЫ
+# ============================================
+
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     save_user_info(message)
@@ -1074,7 +1085,10 @@ def handle_stock_command(message):
         # Если аргумента нет, показываем инструкцию
         handle_stock_search(message)
 
+# ============================================
 # ОБРАБОТЧИКИ КНОПОК
+# ============================================
+
 @bot.message_handler(func=lambda message: message.text == '🏆 Топ валют')
 def handle_top_currencies(message):
     save_user_info(message)
@@ -1147,7 +1161,7 @@ def handle_currency_search(message):
         message.chat.id,
         search_text,
         parse_mode='Markdown',
-        reply_markup=create_contact_keyboard()  # Используем ту же клавиатуру с кнопкой отмены
+        reply_markup=create_contact_keyboard()
     )
 
 @bot.message_handler(func=lambda message: message.text == '🔎 Поиск крипты')
@@ -1273,7 +1287,7 @@ def handle_about(message):
 • Московская биржа (MOEX)
 
 *Защита от спама:*
-• {MAX_MESSAGES} сообщений в 5 минут
+• {MAX_MESSAGES} сообщений в {TIME_WINDOW//60} минут
 • Блокировка на {BLOCK_DURATION//60} минут
 
 _Бот создан для удобного отслеживания курсов_
@@ -1305,7 +1319,10 @@ def handle_cancel(message):
             reply_markup=create_main_keyboard()
         )
 
+# ============================================
 # ОБРАБОТЧИК СООБЩЕНИЙ В РЕЖИМЕ СВЯЗИ
+# ============================================
+
 @bot.message_handler(func=lambda message: user_states.get(message.chat.id) == 'contact_mode')
 def handle_contact_messages(message):
     save_user_info(message)
@@ -1342,7 +1359,10 @@ def handle_contact_messages(message):
     else:
         bot.reply_to(message, "❌ Ошибка при отправке сообщения.")
 
-# ОБРАБОТЧИК СООБЩЕНИЙ В РЕЖИМЕ ПОИСКА ВАЛЮТЫ
+# ============================================
+# ОБРАБОТЧИКИ ПОИСКА
+# ============================================
+
 @bot.message_handler(func=lambda message: user_states.get(message.chat.id) == 'search_currency')
 def handle_search_query(message):
     save_user_info(message)
@@ -1378,7 +1398,6 @@ def handle_search_query(message):
     
     user_states[message.chat.id] = 'main'
 
-# ОБРАБОТЧИК СООБЩЕНИЙ В РЕЖИМЕ ПОИСКА КРИПТОВАЛЮТ
 @bot.message_handler(func=lambda message: user_states.get(message.chat.id) == 'search_crypto')
 def handle_crypto_search_query(message):
     save_user_info(message)
@@ -1414,7 +1433,6 @@ def handle_crypto_search_query(message):
     
     user_states[message.chat.id] = 'main'
 
-# ОБРАБОТЧИК СООБЩЕНИЙ В РЕЖИМЕ ПОИСКА АКЦИЙ
 @bot.message_handler(func=lambda message: user_states.get(message.chat.id) == 'search_stock')
 def handle_stock_search_query(message):
     save_user_info(message)
@@ -1450,7 +1468,10 @@ def handle_stock_search_query(message):
     
     user_states[message.chat.id] = 'main'
 
+# ============================================
 # ОБРАБОТЧИК ВСЕХ ОСТАЛЬНЫХ СООБЩЕНИЙ
+# ============================================
+
 @bot.message_handler(func=lambda message: True)
 def handle_other_messages(message):
     save_user_info(message)
@@ -1464,8 +1485,12 @@ def handle_other_messages(message):
             reply_markup=create_main_keyboard()
         )
 
+# ============================================
+# ЗАПУСК БОТА
+# ============================================
+
 if __name__ == "__main__":
-    config_info = Config.print_config()
+    config_info = print_config_info()
     print("🤖 Бот запущен и готов к работе!")
     print(f"⚡ Защита: {config_info['MAX_MESSAGES']} сообщений в {config_info['TIME_WINDOW']//60} минут")
     print(f"💾 База данных: {config_info['DATABASE_NAME']}")
