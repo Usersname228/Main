@@ -17,7 +17,7 @@ import re
 # КОНФИГУРАЦИЯ БОТА
 # ============================================
 
-BOT_TOKEN = "8045925681:AAGsbJnHkjyQ23X_4OlctxobxLcb-RZb7aM"
+BOT_TOKEN = "8209316575:AAGmiY8VwtUZpMRnlXJHPOTWOsS848feuC4"
 ADMIN_CHAT_ID = 7669840193
 DATABASE_NAME = "database.db"
 
@@ -5526,3 +5526,4 @@ if __name__ == "__main__":
         print("\n🔴 Бот остановлен")
     except Exception as e:
         logger.error(f"Ошибка: {e}")
+
