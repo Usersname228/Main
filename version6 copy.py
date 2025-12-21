@@ -20,7 +20,7 @@ import re
 BOT_TOKEN = "8261174970:AAH1LgSfQYtUiKdjSLN2QxJJMMnIAOhhBuw"
 ADMIN_CHAT_ID = 7669840193
 DATABASE_NAME = "database.db"
-TELEGRAM_CHANNEL_ID = "-1002901750088"
+TELEGRAM_CHANNEL_ID = "-1003603682144"
 
 # Настройки защиты от спама
 MAX_MESSAGES = 10
@@ -6534,4 +6534,5 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("\n🔴 Бот остановлен")
     except Exception as e:
+
         logger.error(f"Ошибка: {e}")
